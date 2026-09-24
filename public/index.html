@@ -103,6 +103,10 @@
   .bar .inner { max-width: 980px; margin: 0 auto; display: flex; align-items: center; gap: 14px; justify-content: space-between; flex-wrap: wrap; }
   .bar .sel-count { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
   [hidden] { display: none !important; }
+  details.alt { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 14px; }
+  details.alt summary { cursor: pointer; font-weight: 500; font-size: 14px; }
+  .steps { padding-left: 20px; margin: 12px 0; }
+  .steps li { margin-bottom: 6px; }
 
   @media (max-width: 600px) {
     li.person { grid-template-columns: 24px 44px 1fr; }
@@ -152,6 +156,19 @@
       <button class="btn" type="submit">Confirmar código</button>
     </form>
     <div class="notice" id="loginError" hidden></div>
+    <details class="alt" id="sessionAlt">
+      <summary>¿No te deja entrar? Usa tu sesión de instagram.com</summary>
+      <ol class="hint steps">
+        <li>En la computadora, abre <b>instagram.com</b> con tu cuenta iniciada.</li>
+        <li>Abre las herramientas de desarrollador (F12, o Cmd+Opción+I en Mac) y ve a <b>Application → Cookies → https://www.instagram.com</b>.</li>
+        <li>Copia el valor de la cookie <b>sessionid</b> y pégalo aquí.</li>
+      </ol>
+      <form id="sessionForm" autocomplete="off">
+        <div class="field"><label for="sessionid">sessionid</label><input type="password" id="sessionid" required spellcheck="false"></div>
+        <button class="btn" type="submit" id="sessionBtn">Entrar con sessionid</button>
+      </form>
+      <p class="hint">Es como la llave de tu sesión: no la compartas con nadie. Si cierras sesión en instagram.com deja de funcionar.</p>
+    </details>
     <p class="risk">Esta herramienta usa la API privada de Instagram, que no es oficial y va contra sus Términos de uso. Existe riesgo de bloqueos temporales o de que pidan verificar la cuenta. Ve por tandas pequeñas y con pausas.</p>
   </section>
 
@@ -326,8 +343,23 @@ $('loginForm').addEventListener('submit', async (e) => {
         : 'Escribe el código que Instagram te envió por SMS.';
       view('2fa');
     } else enterApp(r.username);
-  } catch (err) { if (err.code !== 'relogin' && err.code !== 'app_password') flash($('loginError'), err.message); }
+  } catch (err) {
+    if (err.code !== 'relogin' && err.code !== 'app_password') flash($('loginError'), err.message);
+    $('sessionAlt').open = true;
+  }
   $('loginBtn').disabled = false; $('loginBtn').textContent = 'Iniciar sesión';
+});
+
+$('sessionForm').addEventListener('submit', async (e) => {
+  e.preventDefault(); flash($('loginError'), '');
+  $('sessionBtn').disabled = true; $('sessionBtn').textContent = 'Conectando…';
+  try {
+    setToken(null);
+    const r = await api('login-session', { sessionid: $('sessionid').value.trim() });
+    $('sessionid').value = '';
+    enterApp(r.username);
+  } catch (err) { if (err.code !== 'relogin' && err.code !== 'app_password') flash($('loginError'), err.message); }
+  $('sessionBtn').disabled = false; $('sessionBtn').textContent = 'Entrar con sessionid';
 });
 
 $('twoFaForm').addEventListener('submit', async (e) => {

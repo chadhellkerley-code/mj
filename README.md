@@ -28,6 +28,10 @@ Abre http://localhost:3000. En local `APP_PASSWORD` y `SESSION_SECRET` son opcio
   y el navegador la manda en cada pedido. Tu contraseña de Instagram solo se usa para iniciar sesión.
 - Las tareas largas las conduce el navegador en pasos cortos: una página de seguidores por pedido,
   y lotes de 25 para agregar a Mejores amigos, con pausas al azar. **Deja la pestaña abierta** mientras corren.
+- Si Instagram rechaza el inicio de sesión con usuario y contraseña, se puede entrar pegando la
+  cookie `sessionid` de instagram.com (el panel explica cómo). No la compartas: es la llave de tu sesión.
+- La versión de app que se presenta a Instagram está en `APP_PROFILE` (`lib/app.js`). Si vuelve a salir
+  "Your version of Instagram is out of date", hay que actualizarla.
 - La lista descargada se guarda en el navegador (localStorage) para no descargarla cada vez.
 - `api/index.js`: entrada de Vercel. `server.js`: servidor local.
 
