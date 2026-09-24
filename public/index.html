@@ -124,10 +124,22 @@
     </div>
   </header>
 
+  <!-- Contraseña del panel -->
+  <section class="panel narrow" id="unlockPanel" hidden>
+    <h2>Panel protegido</h2>
+    <p class="hint">Escribe la contraseña del panel para continuar.</p>
+    <div style="height:14px"></div>
+    <form id="unlockForm">
+      <div class="field"><label for="appPass">Contraseña del panel</label><input type="password" id="appPass" required autocomplete="current-password"></div>
+      <button class="btn" type="submit" id="unlockBtn">Entrar</button>
+    </form>
+    <div class="notice" id="unlockError" hidden></div>
+  </section>
+
   <!-- Inicio de sesión -->
-  <section class="panel narrow" id="loginPanel">
+  <section class="panel narrow" id="loginPanel" hidden>
     <h2>Conecta tu cuenta</h2>
-    <p class="hint">Usa una cuenta que sea tuya. Los datos van solo a este programa, en tu computadora.</p>
+    <p class="hint">Usa una cuenta que sea tuya. Tu contraseña solo se usa para iniciar sesión y no se guarda; la sesión queda cifrada en este navegador.</p>
     <div style="height:14px"></div>
     <form id="loginForm" autocomplete="off">
       <div class="field"><label for="user">Usuario de Instagram</label><input type="text" id="user" required autocapitalize="none" spellcheck="false"></div>
@@ -200,113 +212,191 @@
 
 <script>
 const $ = (id) => document.getElementById(id);
-const state = { followers: [], selected: new Set(), shown: 150, filtered: [], polling: null };
+const state = { followers: [], besties: new Set(), selected: new Set(), shown: 150, filtered: [], busy: null, cancel: false, username: null };
 const PAGE = 150;
+const ADD_CHUNK = 25;
+const MAX_ADD = 500;
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const rand = (a, b) => a + Math.floor(Math.random() * (b - a));
+
+/* ---------- Almacenamiento local (puede no estar disponible) ---------- */
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (_) { return null; } },
+  set(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (_) {} },
+};
+let appPass = store.get('mj.appPass') || '';
+let token = store.get('mj.token') || '';
+const setToken = (t) => { token = t || ''; store.set('mj.token', t || null); };
+const cacheKey = () => 'mj.cache.' + state.username;
+function saveCache() {
+  store.set(cacheKey(), JSON.stringify({ at: Date.now(), followers: state.followers, besties: [...state.besties] }));
+}
+
+class ApiError extends Error { constructor(msg, code) { super(msg); this.code = code; } }
 
 async function api(path, body) {
-  const res = await fetch('/api/' + path, body === undefined ? undefined : {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
-  });
+  const opts = { headers: { 'x-app-password': appPass } };
+  if (body !== undefined) {
+    opts.method = 'POST';
+    opts.headers['Content-Type'] = 'application/json';
+    opts.body = JSON.stringify({ token, ...body });
+  }
+  let res;
+  try { res = await fetch('/api/' + path, opts); }
+  catch (_) { throw new ApiError('No hay conexión con el servidor. Revisa tu internet.'); }
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || 'Error inesperado.');
+  if (!res.ok) {
+    const err = new ApiError(data.error || 'Error inesperado.', data.code);
+    if (err.code === 'app_password') { appPass = ''; store.set('mj.appPass', null); view('unlock', err.message); }
+    if (err.code === 'relogin') { setToken(null); view('login', err.message); }
+    throw err;
+  }
+  if (data.token) setToken(data.token);
   return data;
 }
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const show = (el, on = true) => (el.hidden = !on);
 function flash(el, msg) { el.textContent = msg; show(el, !!msg); }
 
-/* ---------- Sesión ---------- */
-function renderSession(s) {
-  const logged = s.loggedIn;
-  show($('loginPanel'), !logged);
-  show($('app'), logged);
-  show($('account'), logged);
-  show($('bar'), logged && state.followers.length > 0);
-  if (logged) $('accountName').textContent = '@' + s.username;
-  show($('loginForm'), !s.needs2fa);
-  show($('twoFaForm'), s.needs2fa && !logged);
-  if (s.needs2fa) {
-    $('twoFaHint').textContent = s.twoFactorMethod === 'totp'
-      ? 'Escribe el código de tu app de autenticación.'
-      : 'Escribe el código que Instagram te envió por SMS.';
+/* ---------- Pantallas ---------- */
+function view(name, message) {
+  show($('unlockPanel'), name === 'unlock');
+  show($('loginPanel'), name === 'login' || name === '2fa');
+  show($('loginForm'), name === 'login');
+  show($('twoFaForm'), name === '2fa');
+  show($('app'), name === 'app');
+  show($('account'), name === 'app');
+  show($('bar'), name === 'app' && state.followers.length > 0);
+  if (name === 'unlock') flash($('unlockError'), message || '');
+  if (name === 'login' || name === '2fa') flash($('loginError'), message || '');
+  if (name !== 'app') state.cancel = true;
+}
+
+async function boot() {
+  try {
+    const cfg = await api('config');
+    if (cfg.passwordRequired && !appPass) return view('unlock');
+    if (!token) return view('login');
+    const me = await api('me', {});
+    enterApp(me.username);
+  } catch (err) {
+    if (!err.code) view('login', err.message);
   }
 }
+
+function enterApp(username) {
+  state.username = username;
+  $('accountName').textContent = '@' + username;
+  view('app');
+  let cached = null;
+  try { cached = JSON.parse(store.get(cacheKey()) || 'null'); } catch (_) {}
+  if (cached && cached.followers && cached.followers.length && !state.followers.length) {
+    state.followers = cached.followers;
+    state.besties = new Set(cached.besties || []);
+    const when = new Date(cached.at).toLocaleString();
+    $('fetchHint').textContent = `${state.followers.length} seguidores (descargados el ${when}).`;
+    showResults();
+  }
+}
+
+$('unlockForm').addEventListener('submit', async (e) => {
+  e.preventDefault(); flash($('unlockError'), '');
+  $('unlockBtn').disabled = true;
+  appPass = $('appPass').value;
+  try {
+    await api('unlock', {});
+    store.set('mj.appPass', appPass);
+    $('appPass').value = '';
+    await boot();
+  } catch (err) { if (err.code !== 'app_password') flash($('unlockError'), err.message); }
+  $('unlockBtn').disabled = false;
+});
 
 $('loginForm').addEventListener('submit', async (e) => {
   e.preventDefault(); flash($('loginError'), '');
   $('loginBtn').disabled = true; $('loginBtn').textContent = 'Conectando…';
   try {
+    setToken(null);
     const r = await api('login', { username: $('user').value.trim().replace(/^@/, ''), password: $('pass').value });
     $('pass').value = '';
-    await refresh(true);
-  } catch (err) { flash($('loginError'), err.message); }
+    if (r.needs2fa) {
+      $('twoFaHint').textContent = r.method === 'totp'
+        ? 'Escribe el código de tu app de autenticación.'
+        : 'Escribe el código que Instagram te envió por SMS.';
+      view('2fa');
+    } else enterApp(r.username);
+  } catch (err) { if (err.code !== 'relogin' && err.code !== 'app_password') flash($('loginError'), err.message); }
   $('loginBtn').disabled = false; $('loginBtn').textContent = 'Iniciar sesión';
 });
 
 $('twoFaForm').addEventListener('submit', async (e) => {
   e.preventDefault(); flash($('loginError'), '');
-  try { await api('2fa', { code: $('code').value }); $('code').value = ''; await refresh(true); }
-  catch (err) { flash($('loginError'), err.message); }
+  try { const r = await api('2fa', { code: $('code').value }); $('code').value = ''; enterApp(r.username); }
+  catch (err) { if (err.code !== 'relogin') flash($('loginError'), err.message); }
 });
 
-$('logoutBtn').addEventListener('click', async () => {
-  await api('logout', {});
-  state.followers = []; state.selected.clear();
+$('logoutBtn').addEventListener('click', () => {
+  state.cancel = true;
+  store.set(cacheKey(), null);
+  setToken(null);
+  state.followers = []; state.besties = new Set(); state.selected.clear();
   show($('results'), false);
-  await refresh(true);
+  $('fetchHint').textContent = 'Todavía no descargaste tu lista.';
+  view('login');
 });
 
-/* ---------- Tareas en segundo plano ---------- */
-$('fetchBtn').addEventListener('click', async () => {
-  flash($('jobError'), '');
-  try { await api('followers/fetch', {}); startPolling(); } catch (err) { flash($('jobError'), err.message); }
-});
-
-function startPolling() { if (!state.polling) state.polling = setInterval(() => refresh(false), 1200); }
-function stopPolling() { clearInterval(state.polling); state.polling = null; }
-
-let lastJobRunning = false;
-async function refresh(initial) {
-  const s = await api('status');
-  renderSession(s);
-  if (!s.loggedIn) { stopPolling(); return; }
-  const j = s.job;
-
-  if (j.type === 'followers') {
-    show($('fetchProgress'), j.running);
-    $('fetchBtn').disabled = j.running;
-    if (j.running) $('fetchHint').textContent = `${j.message} ${j.done} descargados.`;
-    $('fetchProgress').firstElementChild.style.width = j.running ? '60%' : '100%';
+/* ---------- Descarga (el navegador pide página por página) ---------- */
+async function fetchAllPages(path, onPage) {
+  let cursor = null;
+  for (;;) {
+    if (state.cancel) throw new ApiError('Descarga detenida.', 'cancel');
+    const r = await api(path, { cursor });
+    onPage(r);
+    if (!r.more) return;
+    cursor = r.cursor;
+    await sleep(rand(1500, 3500)); // ritmo humano
   }
-  if (j.type === 'besties') {
-    show($('addProgressWrap'), j.running);
-    $('addProgress').style.width = j.total ? (100 * (j.done + j.failed) / j.total) + '%' : '0';
-    $('addBtn').disabled = j.running || state.selected.size === 0;
-    if (j.running) $('barHint').textContent = `Agregando… ${j.done + j.failed} de ${j.total}`;
-  }
-  if (j.error) flash($('jobError'), j.error);
-
-  if (lastJobRunning && !j.running) {           // terminó una tarea
-    stopPolling();
-    if (j.type === 'followers' && !j.error) $('fetchHint').textContent = j.message;
-    if (j.type === 'besties') {
-      $('barHint').textContent = j.message || '';
-      state.selected.clear();
-    }
-    await loadFollowers();
-  } else if (initial && s.followersCount > 0 && !state.followers.length) {
-    await loadFollowers();
-    if (s.job.type === 'followers') $('fetchHint').textContent = `${s.followersCount} seguidores descargados.`;
-  }
-  lastJobRunning = j.running;
-  if (j.running) startPolling();
 }
 
-async function loadFollowers() {
-  const { followers } = await api('followers');
-  state.followers = followers;
-  show($('results'), followers.length > 0);
-  show($('bar'), followers.length > 0);
+$('fetchBtn').addEventListener('click', async () => {
+  if (state.busy === 'followers') { state.cancel = true; return; }
+  if (state.busy) return;
+  flash($('jobError'), '');
+  state.busy = 'followers'; state.cancel = false;
+  $('fetchBtn').textContent = 'Detener';
+  show($('fetchProgress'), true);
+  $('fetchProgress').firstElementChild.style.width = '60%';
+  const collected = [];
+  try {
+    await fetchAllPages('followers/page', (r) => {
+      collected.push(...r.users);
+      $('fetchHint').textContent = `Descargando seguidores… ${collected.length} descargados.`;
+    });
+    $('fetchHint').textContent = 'Leyendo tu lista de Mejores amigos…';
+    const besties = new Set();
+    await fetchAllPages('besties/page', (r) => r.ids.forEach((id) => besties.add(id)));
+    state.followers = collected;
+    state.besties = besties;
+    state.selected.clear();
+    saveCache();
+    $('fetchHint').textContent = `Listo: ${collected.length} seguidores.`;
+    showResults();
+  } catch (err) {
+    if (err.code === 'cancel') $('fetchHint').textContent = 'Descarga detenida. Vuelve a intentarlo cuando quieras.';
+    else if (err.code !== 'relogin' && err.code !== 'app_password') flash($('jobError'), err.message);
+  } finally {
+    state.busy = null;
+    $('fetchBtn').textContent = 'Descargar seguidores';
+    $('fetchProgress').firstElementChild.style.width = '100%';
+    show($('fetchProgress'), false);
+  }
+});
+
+function showResults() {
+  state.followers.forEach((f) => (f.closeFriend = state.besties.has(f.pk)));
+  show($('results'), state.followers.length > 0);
+  show($('bar'), state.followers.length > 0);
   applyFilters();
 }
 
@@ -382,23 +472,55 @@ $('selNone').addEventListener('click', () => { state.selected.clear(); render();
 function updateBar() {
   const n = state.selected.size;
   $('selCount').textContent = n === 1 ? '1 seleccionado' : `${n} seleccionados`;
+  if (state.busy === 'besties') return;
   $('addBtn').disabled = n === 0;
   $('addBtn').textContent = n ? `Agregar ${n} a Mejores amigos` : 'Agregar a Mejores amigos';
-  if (!$('addProgressWrap').hidden) return;
   $('barHint').textContent = n > 150
     ? 'Son muchos para una sola vez. Para cuidar tu cuenta, agrega 100–150 por día.'
-    : 'Se agregan en lotes pequeños, con pausas entre cada uno.';
+    : 'Se agregan en lotes pequeños, con pausas entre cada uno. Mantén esta pestaña abierta.';
 }
 
+/* ---------- Agregar (lotes de 25 con pausas) ---------- */
 $('addBtn').addEventListener('click', async () => {
-  const ids = [...state.selected];
-  if (!confirm(`Vas a agregar ${ids.length} personas a Mejores amigos. ¿Continuar?`)) return;
+  if (state.busy === 'besties') { state.cancel = true; return; }
+  if (state.busy) return;
+  const ids = [...state.selected].filter((id) => !state.besties.has(id));
+  if (!ids.length) { flash($('jobError'), 'No hay usuarios nuevos para agregar.'); return; }
+  if (ids.length > MAX_ADD) { flash($('jobError'), `Máximo ${MAX_ADD} por tanda. Divide la selección en varias tandas.`); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+  if (!confirm(`Vas a agregar ${ids.length} personas a Mejores amigos. Mantén esta pestaña abierta hasta que termine. ¿Continuar?`)) return;
+
   flash($('jobError'), '');
-  try { await api('besties/add', { ids }); $('addBtn').disabled = true; startPolling(); lastJobRunning = true; }
-  catch (err) { flash($('jobError'), err.message); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+  state.busy = 'besties'; state.cancel = false;
+  $('addBtn').textContent = 'Detener';
+  show($('addProgressWrap'), true);
+  let done = 0, failed = 0, stopMsg = '';
+  const progress = () => {
+    $('addProgress').style.width = (100 * (done + failed) / ids.length) + '%';
+    $('barHint').textContent = `Agregando… ${done + failed} de ${ids.length}`;
+  };
+  progress();
+  for (let i = 0; i < ids.length; i += ADD_CHUNK) {
+    if (state.cancel) { stopMsg = ' Detenido.'; break; }
+    const chunk = ids.slice(i, i + ADD_CHUNK);
+    try {
+      await api('besties/add', { ids: chunk });
+      chunk.forEach((id) => { state.besties.add(id); state.selected.delete(id); });
+      done += chunk.length;
+    } catch (err) {
+      failed += chunk.length;
+      if (err.code) { if (err.code === 'blocked') flash($('jobError'), err.message); stopMsg = ' Detenido.'; break; }
+    }
+    progress();
+    if (i + ADD_CHUNK < ids.length) await sleep(rand(4000, 8000));
+  }
+  state.busy = null;
+  show($('addProgressWrap'), false);
+  saveCache();
+  showResults();
+  $('barHint').textContent = `Listo: ${done} agregados${failed ? `, ${failed} fallaron` : ''}.${stopMsg}`;
 });
 
-refresh(true);
+boot();
 </script>
 </body>
 </html>
