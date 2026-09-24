@@ -2,7 +2,7 @@
   "name": "mejores-amigos-tool",
   "version": "1.0.0",
   "private": true,
-  "description": "Panel para filtrar seguidores de tu cuenta de Instagram y agregarlos a Mejores amigos (local o en Vercel)",
+  "description": "Panel para agregar una lista de usuarios a Mejores amigos de Instagram con límites (Vercel o local)",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
