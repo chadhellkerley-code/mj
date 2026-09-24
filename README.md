@@ -26,12 +26,18 @@ Abre http://localhost:3000. En local `APP_PASSWORD` y `SESSION_SECRET` son opcio
 - `lib/app.js`: API Express **sin estado** que usa `instagram-private-api`. El servidor no guarda nada.
 - La sesión de Instagram vuelve al navegador cifrada con AES-256-GCM (clave: `SESSION_SECRET`)
   y el navegador la manda en cada pedido. Tu contraseña de Instagram solo se usa para iniciar sesión.
-- El navegador conduce la cola en pasos cortos, con estos límites (constante `PACE` en `public/index.html`):
+- El navegador conduce la cola en pasos cortos, con estos límites (constante `PACES` en `public/index.html`):
   - límite por día elegible (80 por defecto, máximo 250); al llegar se detiene y sigue otro día;
-  - lotes de 5 a 10 personas, con 45 s a 2 min de pausa al azar entre lotes;
-  - un descanso de 10 a 20 min cada 40 agregados;
-  - búsqueda de cada usuario con 3 a 8 s de pausa;
-  - salta a quienes ya están en tu lista, y se detiene al primer aviso de bloqueo o límite.
+  - salta a quienes ya están en tu lista, y se detiene al primer aviso de bloqueo o límite;
+  - dos ritmos a elegir:
+
+    | | Prudente (por defecto) | Rápido |
+    |---|---|---|
+    | Personas por lote | 5–10 | 15–25 |
+    | Pausa entre lotes | 45 s – 2 min | 30 s – 1 min 15 s |
+    | Descanso largo | 10–20 min cada 40 | 5–10 min cada 100 |
+    | Pausa entre búsquedas | 3–8 s | 2–5 s |
+    | 250 en un día | ~2 h 15 min | ~45 min |
   **Deja la pestaña abierta** mientras corre.
 - La cola y el contador del día se guardan en el navegador (localStorage).
 - Si Instagram rechaza el inicio de sesión con usuario y contraseña, se puede entrar pegando la

@@ -188,10 +188,16 @@
           <div class="hint" id="todayHint"></div>
         </div>
         <div class="row">
+          <label for="pace" style="margin:0">Ritmo</label>
+          <select id="pace" style="width:auto">
+            <option value="prudente">Prudente</option>
+            <option value="rapido">Rápido</option>
+          </select>
           <label for="dailyLimit" style="margin:0">Límite por día</label>
           <input type="number" id="dailyLimit" min="1" max="250" step="1" style="width:90px">
         </div>
       </div>
+      <div class="notice" id="fastWarn" hidden>Modo rápido: termina en menos tiempo, pero junta más acciones seguidas y sube un poco el riesgo de bloqueo. Úsalo cuando tu cuenta ya lleve varios días agregando sin avisos.</div>
 
       <div class="stats">
         <div class="stat"><b id="sPending">0</b><span>Pendientes</span></div>
@@ -212,15 +218,7 @@
 
       <details class="alt">
         <summary>Cómo cuida tu cuenta</summary>
-        <ul class="rules">
-          <li>No pasa del límite por día que elijas. Al llegar, se detiene y sigue desde donde quedó cuando vuelvas otro día.</li>
-          <li>Agrega en lotes chicos de 5 a 10 personas.</li>
-          <li>Espera entre 45 segundos y 2 minutos, al azar, entre cada lote.</li>
-          <li>Cada 40 agregados descansa entre 10 y 20 minutos.</li>
-          <li>Busca a cada usuario con pausas de 3 a 8 segundos.</li>
-          <li>Salta a quienes ya están en tu lista, sin gastar acciones.</li>
-          <li>Si Instagram avisa de un bloqueo o un límite, se detiene al instante.</li>
-        </ul>
+        <ul class="rules" id="rules"></ul>
         <p class="hint">Mantén esta pestaña abierta mientras corre. La cola se guarda en este navegador.</p>
       </details>
     </section>
@@ -238,15 +236,41 @@
 <script>
 const $ = (id) => document.getElementById(id);
 
-// Ritmo pensado para parecer uso manual. Cambiar con cuidado.
-const PACE = {
-  batchMin: 5, batchMax: 10,                 // personas por lote
-  lookupMs: [3000, 8000],                    // pausa entre búsquedas de usuario
-  betweenBatchesMs: [45000, 120000],         // pausa entre lotes
-  restEvery: 40, restMs: [600000, 1200000],  // descanso largo cada N agregados
-  besties: [1500, 3500],                     // pausa al leer tu lista actual
-  maxConsecutiveErrors: 3,
+// Ritmos pensados para parecer uso manual. Cambiar con cuidado.
+const PACES = {
+  prudente: {
+    batchMin: 5, batchMax: 10,                 // personas por lote
+    lookupMs: [3000, 8000],                    // pausa entre búsquedas de usuario
+    betweenBatchesMs: [45000, 120000],         // pausa entre lotes
+    restEvery: 40, restMs: [600000, 1200000],  // descanso largo cada N agregados
+    besties: [1500, 3500],                     // pausa al leer tu lista actual
+    maxConsecutiveErrors: 3,
+    rules: ['Agrega en lotes chicos de 5 a 10 personas.',
+      'Espera entre 45 segundos y 2 minutos, al azar, entre cada lote.',
+      'Cada 40 agregados descansa entre 10 y 20 minutos.',
+      'Busca a cada usuario con pausas de 3 a 8 segundos.',
+      'Con 250 por día tarda unas 2 horas y cuarto.'],
+  },
+  rapido: {
+    batchMin: 15, batchMax: 25,
+    lookupMs: [2000, 5000],
+    betweenBatchesMs: [30000, 75000],
+    restEvery: 100, restMs: [300000, 600000],
+    besties: [1500, 3500],
+    maxConsecutiveErrors: 3,
+    rules: ['Agrega en lotes de 15 a 25 personas.',
+      'Espera entre 30 segundos y 1 minuto y cuarto, al azar, entre cada lote.',
+      'Cada 100 agregados descansa entre 5 y 10 minutos.',
+      'Busca a cada usuario con pausas de 2 a 5 segundos.',
+      'Con 250 por día tarda unos 45 minutos.'],
+  },
 };
+const COMMON_RULES = [
+  'No pasa del límite por día que elijas. Al llegar, se detiene y sigue desde donde quedó cuando vuelvas otro día.',
+  'Salta a quienes ya están en tu lista, sin gastar acciones.',
+  'Si Instagram avisa de un bloqueo o un límite, se detiene al instante.',
+];
+let PACE = PACES.prudente;
 const DEFAULT_DAILY = 80;
 const MAX_DAILY = 250;
 const LIST_PAGE = 200;
@@ -274,6 +298,7 @@ function daily() {
   return d && d.date === today() ? d.count : 0;
 }
 const bumpDaily = (n) => store.set(key('daily'), JSON.stringify({ date: today(), count: daily() + n }));
+const paceMode = () => (PACES[store.get(key('pace'))] ? store.get(key('pace')) : 'prudente');
 function dailyLimit() {
   const v = parseInt(store.get(key('limit')), 10);
   return v >= 1 && v <= MAX_DAILY ? v : DEFAULT_DAILY;
@@ -335,6 +360,7 @@ function enterApp(username) {
   $('accountName').textContent = '@' + username;
   state.queue = store.json(key('queue'), []);
   $('dailyLimit').value = dailyLimit();
+  $('pace').value = paceMode();
   view('app');
   render();
 }
@@ -428,6 +454,11 @@ $('enqueueBtn').addEventListener('click', () => {
   render();
 });
 
+$('pace').addEventListener('change', () => {
+  store.set(key('pace'), $('pace').value);
+  render();
+});
+
 $('dailyLimit').addEventListener('change', () => {
   const v = Math.max(1, Math.min(MAX_DAILY, parseInt($('dailyLimit').value, 10) || DEFAULT_DAILY));
   $('dailyLimit').value = v;
@@ -480,9 +511,15 @@ function render() {
     if (!total) setStatus('Pega usuarios arriba para armar la cola.');
     else if (!c.pending) setStatus('No quedan pendientes.');
     else if (used >= limit) setStatus('Llegaste al límite de hoy. Vuelve mañana para seguir desde donde quedó.');
+    else if (!/^(Pausado|Detenido|Terminado)/.test($('status').textContent)) setStatus(`Listo para empezar: ${c.pending} pendientes.`);
   }
   ['retryBtn', 'clearDoneBtn', 'clearAllBtn'].forEach((id) => ($(id).disabled = state.running));
   $('dailyLimit').disabled = state.running;
+  $('pace').disabled = state.running;
+  const mode = paceMode();
+  show($('fastWarn'), mode === 'rapido');
+  $('rules').innerHTML = [COMMON_RULES[0], ...PACES[mode].rules, ...COMMON_RULES.slice(1)]
+    .map((r) => `<li>${esc(r)}</li>`).join('');
 
   show($('queueSection'), total > 0);
   $('count').textContent = `${total} en la cola`;
@@ -538,6 +575,7 @@ $('runBtn').addEventListener('click', () => {
 
 async function run() {
   flash($('jobError'), '');
+  PACE = PACES[paceMode()];
   state.running = true; state.cancel = false;
   render();
   keepAwake(true);
