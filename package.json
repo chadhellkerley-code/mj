@@ -1,0 +1,14 @@
+{
+  "name": "mejores-amigos-tool",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Panel local para filtrar seguidores de tu cuenta de Instagram y agregarlos a Mejores amigos",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "instagram-private-api": "^1.46.1"
+  }
+}

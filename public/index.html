@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mejores amigos · panel de seguidores</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #F1F3EE;
+    --panel: #FFFFFF;
+    --ink: #17231E;
+    --muted: #5E6B64;
+    --line: #D8DED6;
+    --green: #17A354;
+    --green-deep: #0E7A3D;
+    --green-soft: #E1F2E7;
+    --warn: #A5451C;
+    --warn-soft: #F8E9E1;
+    --radius: 10px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #131A17; --panel: #1B2420; --ink: #E8EEE9; --muted: #92A099;
+      --line: #2C3832; --green: #2BC46E; --green-deep: #52D88C; --green-soft: #1A3527;
+      --warn: #F0946A; --warn-soft: #3A2318;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-padding-bottom: 96px; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font: 400 16px/1.5 "Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  button, input, select { font: inherit; color: inherit; }
+  :focus-visible { outline: 3px solid var(--green); outline-offset: 2px; }
+
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 20px 120px; }
+  header.top { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 28px 0 8px; flex-wrap: wrap; }
+  h1 { font-size: clamp(28px, 5vw, 44px); line-height: 1.05; margin: 0; font-weight: 700; letter-spacing: -0.02em; }
+  h2 { font-size: 20px; margin: 0 0 4px; font-weight: 700; letter-spacing: -0.01em; }
+  .lede { color: var(--muted); margin: 8px 0 0; max-width: 56ch; }
+
+  .account { display: flex; align-items: center; gap: 10px; }
+  .chip { background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; font-weight: 500; }
+
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; margin-top: 20px; }
+  .panel.narrow { max-width: 460px; }
+
+  label { display: block; font-weight: 500; font-size: 14px; margin-bottom: 6px; }
+  input[type=text], input[type=password], input[type=search], input[type=number], select {
+    width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper);
+  }
+  .field { margin-bottom: 14px; }
+  .hint { color: var(--muted); font-size: 14px; }
+
+  .btn { border: 1px solid var(--ink); background: var(--ink); color: var(--paper); padding: 10px 18px; border-radius: 8px; font-weight: 500; cursor: pointer; }
+  .btn:hover { filter: brightness(1.15); }
+  .btn.green { background: var(--green); border-color: var(--green); color: #fff; }
+  .btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; filter: none; }
+  .btn.small { padding: 6px 12px; font-size: 14px; }
+
+  .notice { border-radius: 8px; padding: 12px 14px; font-size: 14px; margin-top: 16px; background: var(--warn-soft); color: var(--warn); }
+  .notice.info { background: var(--green-soft); color: var(--green-deep); }
+  .risk { margin-top: 16px; font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 14px; }
+
+  .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .grow { flex: 1; }
+
+  .progress { height: 6px; border-radius: 6px; background: var(--line); overflow: hidden; margin-top: 12px; }
+  .progress > i { display: block; height: 100%; background: var(--green); transition: width .4s; }
+
+  .filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-top: 16px; }
+  .check { display: flex; align-items: center; gap: 8px; font-size: 14px; margin: 14px 0 0; }
+  .check input { width: 18px; height: 18px; accent-color: var(--green); }
+
+  .listhead { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 22px 0 8px; }
+  .count { font-weight: 500; }
+
+  ul.people { list-style: none; margin: 0; padding: 0; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+  li.person { display: grid; grid-template-columns: 28px 48px 1fr auto; gap: 12px; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--line); cursor: pointer; }
+  li.person:last-child { border-bottom: 0; }
+  li.person:hover { background: var(--paper); }
+  li.person.sel { background: var(--green-soft); }
+  li.person input { width: 18px; height: 18px; accent-color: var(--green); }
+
+  .avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--line); display: grid; place-items: center; font-weight: 700; color: var(--muted); overflow: hidden; position: relative; }
+  .avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .ring { box-shadow: 0 0 0 2px var(--panel), 0 0 0 5px var(--green); }
+
+  .name { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sub { color: var(--muted); font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tags { display: flex; gap: 6px; }
+  .tag { font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+  .tag.cf { border-color: var(--green); color: var(--green-deep); background: var(--green-soft); }
+
+  .empty { padding: 36px 20px; text-align: center; color: var(--muted); }
+
+  .bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--panel); border-top: 1px solid var(--line); padding: 12px 20px calc(12px + env(safe-area-inset-bottom, 0px)); }
+  .bar .inner { max-width: 980px; margin: 0 auto; display: flex; align-items: center; gap: 14px; justify-content: space-between; flex-wrap: wrap; }
+  .bar .sel-count { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+  [hidden] { display: none !important; }
+
+  @media (max-width: 600px) {
+    li.person { grid-template-columns: 24px 44px 1fr; }
+    li.person .tags { grid-column: 3; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Mejores amigos, con criterio</h1>
+      <p class="lede">Descarga los seguidores de tu cuenta, filtra quiénes entran y agrégalos a tu lista de Mejores amigos por tandas.</p>
+    </div>
+    <div class="account" id="account" hidden>
+      <span class="chip" id="accountName"></span>
+      <button class="btn ghost small" id="logoutBtn">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <!-- Inicio de sesión -->
+  <section class="panel narrow" id="loginPanel">
+    <h2>Conecta tu cuenta</h2>
+    <p class="hint">Usa una cuenta que sea tuya. Los datos van solo a este programa, en tu computadora.</p>
+    <div style="height:14px"></div>
+    <form id="loginForm" autocomplete="off">
+      <div class="field"><label for="user">Usuario de Instagram</label><input type="text" id="user" required autocapitalize="none" spellcheck="false"></div>
+      <div class="field"><label for="pass">Contraseña</label><input type="password" id="pass" required></div>
+      <button class="btn" type="submit" id="loginBtn">Iniciar sesión</button>
+    </form>
+    <form id="twoFaForm" hidden>
+      <p class="hint" id="twoFaHint"></p>
+      <div class="field"><label for="code">Código de verificación</label><input type="text" id="code" inputmode="numeric" autocomplete="one-time-code"></div>
+      <button class="btn" type="submit">Confirmar código</button>
+    </form>
+    <div class="notice" id="loginError" hidden></div>
+    <p class="risk">Esta herramienta usa la API privada de Instagram, que no es oficial y va contra sus Términos de uso. Existe riesgo de bloqueos temporales o de que pidan verificar la cuenta. Ve por tandas pequeñas y con pausas.</p>
+  </section>
+
+  <!-- Seguidores -->
+  <main id="app" hidden>
+    <section class="panel">
+      <div class="row">
+        <div class="grow">
+          <h2>Seguidores</h2>
+          <div class="hint" id="fetchHint">Todavía no descargaste tu lista.</div>
+        </div>
+        <button class="btn" id="fetchBtn">Descargar seguidores</button>
+      </div>
+      <div class="progress" id="fetchProgress" hidden><i style="width:0"></i></div>
+      <div class="notice" id="jobError" hidden></div>
+    </section>
+
+    <section id="results" hidden>
+      <div class="panel">
+        <h2>Filtros</h2>
+        <div class="filters">
+          <div><label for="fQ">Buscar</label><input type="search" id="fQ" placeholder="Usuario o nombre"></div>
+          <div><label for="fInc">Incluir palabras</label><input type="text" id="fInc" placeholder="ej: fit, studio"></div>
+          <div><label for="fExc">Excluir palabras</label><input type="text" id="fExc" placeholder="ej: shop, promo"></div>
+          <div><label for="fPriv">Privacidad</label>
+            <select id="fPriv"><option value="all">Todas</option><option value="public">Solo públicas</option><option value="private">Solo privadas</option></select></div>
+          <div><label for="fVer">Verificación</label>
+            <select id="fVer"><option value="all">Todas</option><option value="only">Solo verificadas</option><option value="exclude">Sin verificadas</option></select></div>
+          <div><label for="fPhoto">Foto de perfil</label>
+            <select id="fPhoto"><option value="all">Todas</option><option value="with">Con foto</option><option value="without">Sin foto</option></select></div>
+        </div>
+        <label class="check"><input type="checkbox" id="fHideCF" checked> Ocultar a quienes ya están en Mejores amigos</label>
+      </div>
+
+      <div class="listhead">
+        <div class="count" id="count"></div>
+        <div class="row">
+          <button class="btn ghost small" id="selAll">Seleccionar los filtrados</button>
+          <button class="btn ghost small" id="selNone">Limpiar selección</button>
+        </div>
+      </div>
+      <ul class="people" id="list"></ul>
+      <div class="row" style="justify-content:center;margin-top:14px"><button class="btn ghost" id="moreBtn" hidden>Mostrar más</button></div>
+    </section>
+  </main>
+</div>
+
+<div class="bar" id="bar" hidden>
+  <div class="inner">
+    <div>
+      <div class="sel-count" id="selCount">0 seleccionados</div>
+      <div class="hint" id="barHint">Marca personas en la lista para agregarlas.</div>
+    </div>
+    <div style="min-width:220px;flex:1;max-width:340px" id="addProgressWrap" hidden><div class="progress" style="margin:0"><i id="addProgress" style="width:0"></i></div></div>
+    <button class="btn green" id="addBtn" disabled>Agregar a Mejores amigos</button>
+  </div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const state = { followers: [], selected: new Set(), shown: 150, filtered: [], polling: null };
+const PAGE = 150;
+
+async function api(path, body) {
+  const res = await fetch('/api/' + path, body === undefined ? undefined : {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Error inesperado.');
+  return data;
+}
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const show = (el, on = true) => (el.hidden = !on);
+function flash(el, msg) { el.textContent = msg; show(el, !!msg); }
+
+/* ---------- Sesión ---------- */
+function renderSession(s) {
+  const logged = s.loggedIn;
+  show($('loginPanel'), !logged);
+  show($('app'), logged);
+  show($('account'), logged);
+  show($('bar'), logged && state.followers.length > 0);
+  if (logged) $('accountName').textContent = '@' + s.username;
+  show($('loginForm'), !s.needs2fa);
+  show($('twoFaForm'), s.needs2fa && !logged);
+  if (s.needs2fa) {
+    $('twoFaHint').textContent = s.twoFactorMethod === 'totp'
+      ? 'Escribe el código de tu app de autenticación.'
+      : 'Escribe el código que Instagram te envió por SMS.';
+  }
+}
+
+$('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault(); flash($('loginError'), '');
+  $('loginBtn').disabled = true; $('loginBtn').textContent = 'Conectando…';
+  try {
+    const r = await api('login', { username: $('user').value.trim().replace(/^@/, ''), password: $('pass').value });
+    $('pass').value = '';
+    await refresh(true);
+  } catch (err) { flash($('loginError'), err.message); }
+  $('loginBtn').disabled = false; $('loginBtn').textContent = 'Iniciar sesión';
+});
+
+$('twoFaForm').addEventListener('submit', async (e) => {
+  e.preventDefault(); flash($('loginError'), '');
+  try { await api('2fa', { code: $('code').value }); $('code').value = ''; await refresh(true); }
+  catch (err) { flash($('loginError'), err.message); }
+});
+
+$('logoutBtn').addEventListener('click', async () => {
+  await api('logout', {});
+  state.followers = []; state.selected.clear();
+  show($('results'), false);
+  await refresh(true);
+});
+
+/* ---------- Tareas en segundo plano ---------- */
+$('fetchBtn').addEventListener('click', async () => {
+  flash($('jobError'), '');
+  try { await api('followers/fetch', {}); startPolling(); } catch (err) { flash($('jobError'), err.message); }
+});
+
+function startPolling() { if (!state.polling) state.polling = setInterval(() => refresh(false), 1200); }
+function stopPolling() { clearInterval(state.polling); state.polling = null; }
+
+let lastJobRunning = false;
+async function refresh(initial) {
+  const s = await api('status');
+  renderSession(s);
+  if (!s.loggedIn) { stopPolling(); return; }
+  const j = s.job;
+
+  if (j.type === 'followers') {
+    show($('fetchProgress'), j.running);
+    $('fetchBtn').disabled = j.running;
+    if (j.running) $('fetchHint').textContent = `${j.message} ${j.done} descargados.`;
+    $('fetchProgress').firstElementChild.style.width = j.running ? '60%' : '100%';
+  }
+  if (j.type === 'besties') {
+    show($('addProgressWrap'), j.running);
+    $('addProgress').style.width = j.total ? (100 * (j.done + j.failed) / j.total) + '%' : '0';
+    $('addBtn').disabled = j.running || state.selected.size === 0;
+    if (j.running) $('barHint').textContent = `Agregando… ${j.done + j.failed} de ${j.total}`;
+  }
+  if (j.error) flash($('jobError'), j.error);
+
+  if (lastJobRunning && !j.running) {           // terminó una tarea
+    stopPolling();
+    if (j.type === 'followers' && !j.error) $('fetchHint').textContent = j.message;
+    if (j.type === 'besties') {
+      $('barHint').textContent = j.message || '';
+      state.selected.clear();
+    }
+    await loadFollowers();
+  } else if (initial && s.followersCount > 0 && !state.followers.length) {
+    await loadFollowers();
+    if (s.job.type === 'followers') $('fetchHint').textContent = `${s.followersCount} seguidores descargados.`;
+  }
+  lastJobRunning = j.running;
+  if (j.running) startPolling();
+}
+
+async function loadFollowers() {
+  const { followers } = await api('followers');
+  state.followers = followers;
+  show($('results'), followers.length > 0);
+  show($('bar'), followers.length > 0);
+  applyFilters();
+}
+
+/* ---------- Filtros ---------- */
+const words = (v) => v.split(',').map((w) => w.trim().toLowerCase()).filter(Boolean);
+function applyFilters() {
+  const q = $('fQ').value.trim().toLowerCase();
+  const inc = words($('fInc').value), exc = words($('fExc').value);
+  const priv = $('fPriv').value, ver = $('fVer').value, photo = $('fPhoto').value, hideCF = $('fHideCF').checked;
+
+  state.filtered = state.followers.filter((f) => {
+    const hay = (f.username + ' ' + f.fullName).toLowerCase();
+    if (q && !hay.includes(q)) return false;
+    if (inc.length && !inc.some((w) => hay.includes(w))) return false;
+    if (exc.length && exc.some((w) => hay.includes(w))) return false;
+    if (priv === 'public' && f.isPrivate) return false;
+    if (priv === 'private' && !f.isPrivate) return false;
+    if (ver === 'only' && !f.isVerified) return false;
+    if (ver === 'exclude' && f.isVerified) return false;
+    if (photo === 'with' && !f.hasPhoto) return false;
+    if (photo === 'without' && f.hasPhoto) return false;
+    if (hideCF && f.closeFriend) return false;
+    return true;
+  });
+  state.shown = PAGE;
+  render();
+}
+['fQ', 'fInc', 'fExc', 'fPriv', 'fVer', 'fPhoto', 'fHideCF'].forEach((id) =>
+  $(id).addEventListener(id === 'fQ' || id === 'fInc' || id === 'fExc' ? 'input' : 'change', applyFilters));
+
+/* ---------- Lista ---------- */
+function avatar(f) {
+  const init = esc((f.username[0] || '?').toUpperCase());
+  const img = f.pic ? `<img src="${esc(f.pic)}" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="this.remove()">` : '';
+  return `<div class="avatar ${f.closeFriend ? 'ring' : ''}">${init}${img}</div>`;
+}
+function render() {
+  const list = $('list');
+  const total = state.followers.length;
+  $('count').textContent = `${state.filtered.length} de ${total} seguidores`;
+  if (!state.filtered.length) {
+    list.innerHTML = '<li class="empty">Ningún seguidor coincide con estos filtros. Cambia o quita alguno.</li>';
+  } else {
+    list.innerHTML = state.filtered.slice(0, state.shown).map((f) => `
+      <li class="person ${state.selected.has(f.pk) ? 'sel' : ''}" data-pk="${esc(f.pk)}">
+        <input type="checkbox" ${state.selected.has(f.pk) ? 'checked' : ''} aria-label="Seleccionar @${esc(f.username)}">
+        ${avatar(f)}
+        <div><div class="name">@${esc(f.username)}</div><div class="sub">${esc(f.fullName) || '&nbsp;'}</div></div>
+        <div class="tags">
+          ${f.closeFriend ? '<span class="tag cf">Ya en Mejores amigos</span>' : ''}
+          ${f.isPrivate ? '<span class="tag">Privada</span>' : ''}
+          ${f.isVerified ? '<span class="tag">Verificada</span>' : ''}
+        </div>
+      </li>`).join('');
+  }
+  show($('moreBtn'), state.filtered.length > state.shown);
+  $('moreBtn').textContent = `Mostrar ${Math.min(PAGE, state.filtered.length - state.shown)} más`;
+  updateBar();
+}
+$('moreBtn').addEventListener('click', () => { state.shown += PAGE; render(); });
+
+$('list').addEventListener('click', (e) => {
+  const li = e.target.closest('li.person'); if (!li) return;
+  const pk = li.dataset.pk;
+  state.selected.has(pk) ? state.selected.delete(pk) : state.selected.add(pk);
+  li.classList.toggle('sel', state.selected.has(pk));
+  li.querySelector('input').checked = state.selected.has(pk);
+  updateBar();
+});
+$('selAll').addEventListener('click', () => { state.filtered.forEach((f) => !f.closeFriend && state.selected.add(f.pk)); render(); });
+$('selNone').addEventListener('click', () => { state.selected.clear(); render(); });
+
+function updateBar() {
+  const n = state.selected.size;
+  $('selCount').textContent = n === 1 ? '1 seleccionado' : `${n} seleccionados`;
+  $('addBtn').disabled = n === 0;
+  $('addBtn').textContent = n ? `Agregar ${n} a Mejores amigos` : 'Agregar a Mejores amigos';
+  if (!$('addProgressWrap').hidden) return;
+  $('barHint').textContent = n > 150
+    ? 'Son muchos para una sola vez. Para cuidar tu cuenta, agrega 100–150 por día.'
+    : 'Se agregan en lotes pequeños, con pausas entre cada uno.';
+}
+
+$('addBtn').addEventListener('click', async () => {
+  const ids = [...state.selected];
+  if (!confirm(`Vas a agregar ${ids.length} personas a Mejores amigos. ¿Continuar?`)) return;
+  flash($('jobError'), '');
+  try { await api('besties/add', { ids }); $('addBtn').disabled = true; startPolling(); lastJobRunning = true; }
+  catch (err) { flash($('jobError'), err.message); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+});
+
+refresh(true);
+</script>
+</body>
+</html>
