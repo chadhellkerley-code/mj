@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mejores amigos · panel de seguidores</title>
+<title>Mejores amigos · panel</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,700&display=swap" rel="stylesheet">
@@ -73,45 +73,40 @@
   .progress { height: 6px; border-radius: 6px; background: var(--line); overflow: hidden; margin-top: 12px; }
   .progress > i { display: block; height: 100%; background: var(--green); transition: width .4s; }
 
-  .filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-top: 16px; }
   .check { display: flex; align-items: center; gap: 8px; font-size: 14px; margin: 14px 0 0; }
   .check input { width: 18px; height: 18px; accent-color: var(--green); }
+
+  textarea { width: 100%; min-height: 150px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); font: 400 15px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; color: inherit; resize: vertical; }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-top: 16px; }
+  .stat { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; background: var(--paper); }
+  .stat b { display: block; font-size: 24px; line-height: 1.1; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+  .stat span { color: var(--muted); font-size: 13px; }
+  .stat.accent b { color: var(--green-deep); }
+
+  .status { margin-top: 16px; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .rules { margin: 10px 0 0; padding-left: 20px; color: var(--muted); font-size: 14px; }
+  .rules li { margin-bottom: 4px; }
 
   .listhead { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 22px 0 8px; }
   .count { font-weight: 500; }
 
-  ul.people { list-style: none; margin: 0; padding: 0; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
-  li.person { display: grid; grid-template-columns: 28px 48px 1fr auto; gap: 12px; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--line); cursor: pointer; }
-  li.person:last-child { border-bottom: 0; }
-  li.person:hover { background: var(--paper); }
-  li.person.sel { background: var(--green-soft); }
-  li.person input { width: 18px; height: 18px; accent-color: var(--green); }
-
-  .avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--line); display: grid; place-items: center; font-weight: 700; color: var(--muted); overflow: hidden; position: relative; }
-  .avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .ring { box-shadow: 0 0 0 2px var(--panel), 0 0 0 5px var(--green); }
-
+  ul.queue { list-style: none; margin: 0; padding: 0; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+  ul.queue li { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 9px 14px; border-bottom: 1px solid var(--line); }
+  ul.queue li:last-child { border-bottom: 0; }
   .name { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .sub { color: var(--muted); font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .tags { display: flex; gap: 6px; }
   .tag { font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
-  .tag.cf { border-color: var(--green); color: var(--green-deep); background: var(--green-soft); }
+  .tag.added { border-color: var(--green); color: var(--green-deep); background: var(--green-soft); }
+  .tag.bad { border-color: var(--warn); color: var(--warn); background: var(--warn-soft); }
 
   .empty { padding: 36px 20px; text-align: center; color: var(--muted); }
-
-  .bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--panel); border-top: 1px solid var(--line); padding: 12px 20px calc(12px + env(safe-area-inset-bottom, 0px)); }
-  .bar .inner { max-width: 980px; margin: 0 auto; display: flex; align-items: center; gap: 14px; justify-content: space-between; flex-wrap: wrap; }
-  .bar .sel-count { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
   [hidden] { display: none !important; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   details.alt { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 14px; }
   details.alt summary { cursor: pointer; font-weight: 500; font-size: 14px; }
   .steps { padding-left: 20px; margin: 12px 0; }
   .steps li { margin-bottom: 6px; }
 
-  @media (max-width: 600px) {
-    li.person { grid-template-columns: 24px 44px 1fr; }
-    li.person .tags { grid-column: 3; }
-  }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
@@ -120,7 +115,7 @@
   <header class="top">
     <div>
       <h1>Mejores amigos, con criterio</h1>
-      <p class="lede">Descarga los seguidores de tu cuenta, filtra quiénes entran y agrégalos a tu lista de Mejores amigos por tandas.</p>
+      <p class="lede">Pega una lista de usuarios y se agregan a tus Mejores amigos de a poco, con límites y pausas para cuidar tu cuenta.</p>
     </div>
     <div class="account" id="account" hidden>
       <span class="chip" id="accountName"></span>
@@ -172,82 +167,116 @@
     <p class="risk">Esta herramienta usa la API privada de Instagram, que no es oficial y va contra sus Términos de uso. Existe riesgo de bloqueos temporales o de que pidan verificar la cuenta. Ve por tandas pequeñas y con pausas.</p>
   </section>
 
-  <!-- Seguidores -->
+  <!-- Lista y cola -->
   <main id="app" hidden>
+    <section class="panel">
+      <h2>Lista de usuarios</h2>
+      <p class="hint">Pega los usuarios que quieres en Mejores amigos: uno por línea, o separados por comas o espacios. Sirven también con @ o como enlace de perfil.</p>
+      <div style="height:12px"></div>
+      <label for="input" class="sr">Usuarios</label>
+      <textarea id="input" spellcheck="false" autocapitalize="none" placeholder="@usuario1&#10;usuario2&#10;https://instagram.com/usuario3"></textarea>
+      <div class="row" style="margin-top:12px">
+        <button class="btn" id="enqueueBtn">Agregar a la cola</button>
+        <span class="hint" id="enqueueHint"></span>
+      </div>
+    </section>
+
     <section class="panel">
       <div class="row">
         <div class="grow">
-          <h2>Seguidores</h2>
-          <div class="hint" id="fetchHint">Todavía no descargaste tu lista.</div>
+          <h2>Cola</h2>
+          <div class="hint" id="todayHint"></div>
         </div>
-        <button class="btn" id="fetchBtn">Descargar seguidores</button>
+        <div class="row">
+          <label for="dailyLimit" style="margin:0">Límite por día</label>
+          <input type="number" id="dailyLimit" min="1" max="250" step="1" style="width:90px">
+        </div>
       </div>
-      <div class="progress" id="fetchProgress" hidden><i style="width:0"></i></div>
+
+      <div class="stats">
+        <div class="stat"><b id="sPending">0</b><span>Pendientes</span></div>
+        <div class="stat accent"><b id="sAdded">0</b><span>Agregados</span></div>
+        <div class="stat"><b id="sAlready">0</b><span>Ya estaban</span></div>
+        <div class="stat"><b id="sBad">0</b><span>No encontrados o con error</span></div>
+      </div>
+      <div class="progress"><i id="progress" style="width:0"></i></div>
+      <div class="status" id="status">Listo para empezar.</div>
       <div class="notice" id="jobError" hidden></div>
+
+      <div class="row" style="margin-top:16px">
+        <button class="btn green" id="runBtn">Empezar</button>
+        <button class="btn ghost small" id="retryBtn">Reintentar los con error</button>
+        <button class="btn ghost small" id="clearDoneBtn">Quitar los terminados</button>
+        <button class="btn ghost small" id="clearAllBtn">Vaciar cola</button>
+      </div>
+
+      <details class="alt">
+        <summary>Cómo cuida tu cuenta</summary>
+        <ul class="rules">
+          <li>No pasa del límite por día que elijas. Al llegar, se detiene y sigue desde donde quedó cuando vuelvas otro día.</li>
+          <li>Agrega en lotes chicos de 5 a 10 personas.</li>
+          <li>Espera entre 45 segundos y 2 minutos, al azar, entre cada lote.</li>
+          <li>Cada 40 agregados descansa entre 10 y 20 minutos.</li>
+          <li>Busca a cada usuario con pausas de 3 a 8 segundos.</li>
+          <li>Salta a quienes ya están en tu lista, sin gastar acciones.</li>
+          <li>Si Instagram avisa de un bloqueo o un límite, se detiene al instante.</li>
+        </ul>
+        <p class="hint">Mantén esta pestaña abierta mientras corre. La cola se guarda en este navegador.</p>
+      </details>
     </section>
 
-    <section id="results" hidden>
-      <div class="panel">
-        <h2>Filtros</h2>
-        <div class="filters">
-          <div><label for="fQ">Buscar</label><input type="search" id="fQ" placeholder="Usuario o nombre"></div>
-          <div><label for="fInc">Incluir palabras</label><input type="text" id="fInc" placeholder="ej: fit, studio"></div>
-          <div><label for="fExc">Excluir palabras</label><input type="text" id="fExc" placeholder="ej: shop, promo"></div>
-          <div><label for="fPriv">Privacidad</label>
-            <select id="fPriv"><option value="all">Todas</option><option value="public">Solo públicas</option><option value="private">Solo privadas</option></select></div>
-          <div><label for="fVer">Verificación</label>
-            <select id="fVer"><option value="all">Todas</option><option value="only">Solo verificadas</option><option value="exclude">Sin verificadas</option></select></div>
-          <div><label for="fPhoto">Foto de perfil</label>
-            <select id="fPhoto"><option value="all">Todas</option><option value="with">Con foto</option><option value="without">Sin foto</option></select></div>
-        </div>
-        <label class="check"><input type="checkbox" id="fHideCF" checked> Ocultar a quienes ya están en Mejores amigos</label>
-      </div>
-
+    <section id="queueSection" hidden>
       <div class="listhead">
         <div class="count" id="count"></div>
-        <div class="row">
-          <button class="btn ghost small" id="selAll">Seleccionar los filtrados</button>
-          <button class="btn ghost small" id="selNone">Limpiar selección</button>
-        </div>
       </div>
-      <ul class="people" id="list"></ul>
+      <ul class="queue" id="list"></ul>
       <div class="row" style="justify-content:center;margin-top:14px"><button class="btn ghost" id="moreBtn" hidden>Mostrar más</button></div>
     </section>
   </main>
 </div>
 
-<div class="bar" id="bar" hidden>
-  <div class="inner">
-    <div>
-      <div class="sel-count" id="selCount">0 seleccionados</div>
-      <div class="hint" id="barHint">Marca personas en la lista para agregarlas.</div>
-    </div>
-    <div style="min-width:220px;flex:1;max-width:340px" id="addProgressWrap" hidden><div class="progress" style="margin:0"><i id="addProgress" style="width:0"></i></div></div>
-    <button class="btn green" id="addBtn" disabled>Agregar a Mejores amigos</button>
-  </div>
-</div>
-
 <script>
 const $ = (id) => document.getElementById(id);
-const state = { followers: [], besties: new Set(), selected: new Set(), shown: 150, filtered: [], busy: null, cancel: false, username: null };
-const PAGE = 150;
-const ADD_CHUNK = 25;
-const MAX_ADD = 500;
 
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const rand = (a, b) => a + Math.floor(Math.random() * (b - a));
+// Ritmo pensado para parecer uso manual. Cambiar con cuidado.
+const PACE = {
+  batchMin: 5, batchMax: 10,                 // personas por lote
+  lookupMs: [3000, 8000],                    // pausa entre búsquedas de usuario
+  betweenBatchesMs: [45000, 120000],         // pausa entre lotes
+  restEvery: 40, restMs: [600000, 1200000],  // descanso largo cada N agregados
+  besties: [1500, 3500],                     // pausa al leer tu lista actual
+  maxConsecutiveErrors: 3,
+};
+const DEFAULT_DAILY = 80;
+const MAX_DAILY = 250;
+const LIST_PAGE = 200;
+
+const state = { username: null, queue: [], running: false, cancel: false, shown: LIST_PAGE, wakeLock: null };
+
+const sleepRaw = (ms) => new Promise((r) => setTimeout(r, ms));
+const rand = ([a, b]) => a + Math.floor(Math.random() * (b - a));
+const randInt = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
 
 /* ---------- Almacenamiento local (puede no estar disponible) ---------- */
 const store = {
   get(k) { try { return localStorage.getItem(k); } catch (_) { return null; } },
   set(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (_) {} },
+  json(k, fallback) { try { return JSON.parse(store.get(k)) ?? fallback; } catch (_) { return fallback; } },
 };
 let appPass = store.get('mj.appPass') || '';
 let token = store.get('mj.token') || '';
 const setToken = (t) => { token = t || ''; store.set('mj.token', t || null); };
-const cacheKey = () => 'mj.cache.' + state.username;
-function saveCache() {
-  store.set(cacheKey(), JSON.stringify({ at: Date.now(), followers: state.followers, besties: [...state.besties] }));
+const key = (name) => `mj.${name}.${state.username}`;
+const saveQueue = () => store.set(key('queue'), JSON.stringify(state.queue));
+const today = () => new Date().toLocaleDateString('sv'); // AAAA-MM-DD local
+function daily() {
+  const d = store.json(key('daily'), null);
+  return d && d.date === today() ? d.count : 0;
+}
+const bumpDaily = (n) => store.set(key('daily'), JSON.stringify({ date: today(), count: daily() + n }));
+function dailyLimit() {
+  const v = parseInt(store.get(key('limit')), 10);
+  return v >= 1 && v <= MAX_DAILY ? v : DEFAULT_DAILY;
 }
 
 class ApiError extends Error { constructor(msg, code) { super(msg); this.code = code; } }
@@ -261,7 +290,7 @@ async function api(path, body) {
   }
   let res;
   try { res = await fetch('/api/' + path, opts); }
-  catch (_) { throw new ApiError('No hay conexión con el servidor. Revisa tu internet.'); }
+  catch (_) { throw new ApiError('No hay conexión con el servidor. Revisa tu internet.', 'network'); }
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const err = new ApiError(data.error || 'Error inesperado.', data.code);
@@ -284,7 +313,6 @@ function view(name, message) {
   show($('twoFaForm'), name === '2fa');
   show($('app'), name === 'app');
   show($('account'), name === 'app');
-  show($('bar'), name === 'app' && state.followers.length > 0);
   if (name === 'unlock') flash($('unlockError'), message || '');
   if (name === 'login' || name === '2fa') flash($('loginError'), message || '');
   if (name !== 'app') state.cancel = true;
@@ -298,23 +326,17 @@ async function boot() {
     const me = await api('me', {});
     enterApp(me.username);
   } catch (err) {
-    if (!err.code) view('login', err.message);
+    if (!err.code || err.code === 'network') view('login', err.message);
   }
 }
 
 function enterApp(username) {
   state.username = username;
   $('accountName').textContent = '@' + username;
+  state.queue = store.json(key('queue'), []);
+  $('dailyLimit').value = dailyLimit();
   view('app');
-  let cached = null;
-  try { cached = JSON.parse(store.get(cacheKey()) || 'null'); } catch (_) {}
-  if (cached && cached.followers && cached.followers.length && !state.followers.length) {
-    state.followers = cached.followers;
-    state.besties = new Set(cached.besties || []);
-    const when = new Date(cached.at).toLocaleString();
-    $('fetchHint').textContent = `${state.followers.length} seguidores (descargados el ${when}).`;
-    showResults();
-  }
+  render();
 }
 
 $('unlockForm').addEventListener('submit', async (e) => {
@@ -369,188 +391,239 @@ $('twoFaForm').addEventListener('submit', async (e) => {
 });
 
 $('logoutBtn').addEventListener('click', () => {
+  if (state.running && !confirm('Hay una tanda en curso. ¿Cerrar sesión igual?')) return;
   state.cancel = true;
-  store.set(cacheKey(), null);
   setToken(null);
-  state.followers = []; state.besties = new Set(); state.selected.clear();
-  show($('results'), false);
-  $('fetchHint').textContent = 'Todavía no descargaste tu lista.';
   view('login');
 });
 
-/* ---------- Descarga (el navegador pide página por página) ---------- */
-async function fetchAllPages(path, onPage) {
-  let cursor = null;
-  for (;;) {
-    if (state.cancel) throw new ApiError('Descarga detenida.', 'cancel');
-    const r = await api(path, { cursor });
-    onPage(r);
-    if (!r.more) return;
-    cursor = r.cursor;
-    await sleep(rand(1500, 3500)); // ritmo humano
+/* ---------- Lista de entrada ---------- */
+function parseUsernames(text) {
+  const out = [];
+  for (let raw of text.split(/[\s,;]+/)) {
+    if (!raw) continue;
+    const m = raw.match(/instagram\.com\/([A-Za-z0-9._]+)/i);
+    if (m) raw = m[1];
+    const u = raw.replace(/^@+/, '').toLowerCase();
+    if (/^[a-z0-9._]{1,30}$/.test(u)) out.push(u);
   }
+  return out;
 }
 
-$('fetchBtn').addEventListener('click', async () => {
-  if (state.busy === 'followers') { state.cancel = true; return; }
-  if (state.busy) return;
-  flash($('jobError'), '');
-  state.busy = 'followers'; state.cancel = false;
-  $('fetchBtn').textContent = 'Detener';
-  show($('fetchProgress'), true);
-  $('fetchProgress').firstElementChild.style.width = '60%';
-  const collected = [];
-  try {
-    await fetchAllPages('followers/page', (r) => {
-      collected.push(...r.users);
-      $('fetchHint').textContent = `Descargando seguidores… ${collected.length} descargados.`;
-    });
-    $('fetchHint').textContent = 'Leyendo tu lista de Mejores amigos…';
-    const besties = new Set();
-    await fetchAllPages('besties/page', (r) => r.ids.forEach((id) => besties.add(id)));
-    state.followers = collected;
-    state.besties = besties;
-    state.selected.clear();
-    saveCache();
-    $('fetchHint').textContent = `Listo: ${collected.length} seguidores.`;
-    showResults();
-  } catch (err) {
-    if (err.code === 'cancel') $('fetchHint').textContent = 'Descarga detenida. Vuelve a intentarlo cuando quieras.';
-    else if (err.code !== 'relogin' && err.code !== 'app_password') flash($('jobError'), err.message);
-  } finally {
-    state.busy = null;
-    $('fetchBtn').textContent = 'Descargar seguidores';
-    $('fetchProgress').firstElementChild.style.width = '100%';
-    show($('fetchProgress'), false);
+$('enqueueBtn').addEventListener('click', () => {
+  const names = parseUsernames($('input').value);
+  const known = new Set(state.queue.map((q) => q.u));
+  let added = 0;
+  for (const u of names) {
+    if (known.has(u)) continue;
+    known.add(u);
+    state.queue.push({ u, s: 'pending' });
+    added++;
   }
+  saveQueue();
+  $('enqueueHint').textContent = names.length
+    ? `${added} nuevos en la cola${names.length - added ? ` (${names.length - added} ya estaban o repetidos)` : ''}.`
+    : 'No encontré nombres de usuario válidos.';
+  if (added) $('input').value = '';
+  render();
 });
 
-function showResults() {
-  state.followers.forEach((f) => (f.closeFriend = state.besties.has(f.pk)));
-  show($('results'), state.followers.length > 0);
-  show($('bar'), state.followers.length > 0);
-  applyFilters();
-}
-
-/* ---------- Filtros ---------- */
-const words = (v) => v.split(',').map((w) => w.trim().toLowerCase()).filter(Boolean);
-function applyFilters() {
-  const q = $('fQ').value.trim().toLowerCase();
-  const inc = words($('fInc').value), exc = words($('fExc').value);
-  const priv = $('fPriv').value, ver = $('fVer').value, photo = $('fPhoto').value, hideCF = $('fHideCF').checked;
-
-  state.filtered = state.followers.filter((f) => {
-    const hay = (f.username + ' ' + f.fullName).toLowerCase();
-    if (q && !hay.includes(q)) return false;
-    if (inc.length && !inc.some((w) => hay.includes(w))) return false;
-    if (exc.length && exc.some((w) => hay.includes(w))) return false;
-    if (priv === 'public' && f.isPrivate) return false;
-    if (priv === 'private' && !f.isPrivate) return false;
-    if (ver === 'only' && !f.isVerified) return false;
-    if (ver === 'exclude' && f.isVerified) return false;
-    if (photo === 'with' && !f.hasPhoto) return false;
-    if (photo === 'without' && f.hasPhoto) return false;
-    if (hideCF && f.closeFriend) return false;
-    return true;
-  });
-  state.shown = PAGE;
+$('dailyLimit').addEventListener('change', () => {
+  const v = Math.max(1, Math.min(MAX_DAILY, parseInt($('dailyLimit').value, 10) || DEFAULT_DAILY));
+  $('dailyLimit').value = v;
+  store.set(key('limit'), String(v));
   render();
-}
-['fQ', 'fInc', 'fExc', 'fPriv', 'fVer', 'fPhoto', 'fHideCF'].forEach((id) =>
-  $(id).addEventListener(id === 'fQ' || id === 'fInc' || id === 'fExc' ? 'input' : 'change', applyFilters));
+});
 
-/* ---------- Lista ---------- */
-function avatar(f) {
-  const init = esc((f.username[0] || '?').toUpperCase());
-  const img = f.pic ? `<img src="${esc(f.pic)}" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="this.remove()">` : '';
-  return `<div class="avatar ${f.closeFriend ? 'ring' : ''}">${init}${img}</div>`;
+$('retryBtn').addEventListener('click', () => {
+  state.queue.forEach((q) => { if (q.s === 'error') q.s = 'pending'; });
+  saveQueue(); render();
+});
+$('clearDoneBtn').addEventListener('click', () => {
+  state.queue = state.queue.filter((q) => q.s === 'pending' || q.s === 'error');
+  saveQueue(); render();
+});
+$('clearAllBtn').addEventListener('click', () => {
+  if (state.running) return;
+  if (state.queue.length && !confirm(`¿Vaciar la cola de ${state.queue.length} usuarios?`)) return;
+  state.queue = []; saveQueue(); render();
+});
+
+/* ---------- Vista de la cola ---------- */
+const LABELS = {
+  pending: ['Pendiente', ''],
+  added: ['Agregado', 'added'],
+  already: ['Ya estaba', 'added'],
+  notfound: ['No existe', 'bad'],
+  error: ['Error', 'bad'],
+};
+function counts() {
+  const c = { pending: 0, added: 0, already: 0, notfound: 0, error: 0 };
+  state.queue.forEach((q) => c[q.s]++);
+  return c;
 }
 function render() {
-  const list = $('list');
-  const total = state.followers.length;
-  $('count').textContent = `${state.filtered.length} de ${total} seguidores`;
-  if (!state.filtered.length) {
-    list.innerHTML = '<li class="empty">Ningún seguidor coincide con estos filtros. Cambia o quita alguno.</li>';
-  } else {
-    list.innerHTML = state.filtered.slice(0, state.shown).map((f) => `
-      <li class="person ${state.selected.has(f.pk) ? 'sel' : ''}" data-pk="${esc(f.pk)}">
-        <input type="checkbox" ${state.selected.has(f.pk) ? 'checked' : ''} aria-label="Seleccionar @${esc(f.username)}">
-        ${avatar(f)}
-        <div><div class="name">@${esc(f.username)}</div><div class="sub">${esc(f.fullName) || '&nbsp;'}</div></div>
-        <div class="tags">
-          ${f.closeFriend ? '<span class="tag cf">Ya en Mejores amigos</span>' : ''}
-          ${f.isPrivate ? '<span class="tag">Privada</span>' : ''}
-          ${f.isVerified ? '<span class="tag">Verificada</span>' : ''}
-        </div>
-      </li>`).join('');
+  if (!state.username) return;
+  const c = counts();
+  const total = state.queue.length;
+  $('sPending').textContent = c.pending;
+  $('sAdded').textContent = c.added;
+  $('sAlready').textContent = c.already;
+  $('sBad').textContent = c.notfound + c.error;
+  $('progress').style.width = total ? (100 * (total - c.pending) / total) + '%' : '0';
+  const used = daily(), limit = dailyLimit();
+  $('todayHint').textContent = `Hoy agregaste ${used} de ${limit}.`;
+
+  $('runBtn').textContent = state.running ? 'Pausar' : (total - c.pending ? 'Seguir' : 'Empezar');
+  $('runBtn').disabled = !state.running && (!c.pending || used >= limit);
+  if (!state.running) {
+    if (!total) setStatus('Pega usuarios arriba para armar la cola.');
+    else if (!c.pending) setStatus('No quedan pendientes.');
+    else if (used >= limit) setStatus('Llegaste al límite de hoy. Vuelve mañana para seguir desde donde quedó.');
   }
-  show($('moreBtn'), state.filtered.length > state.shown);
-  $('moreBtn').textContent = `Mostrar ${Math.min(PAGE, state.filtered.length - state.shown)} más`;
-  updateBar();
+  ['retryBtn', 'clearDoneBtn', 'clearAllBtn'].forEach((id) => ($(id).disabled = state.running));
+  $('dailyLimit').disabled = state.running;
+
+  show($('queueSection'), total > 0);
+  $('count').textContent = `${total} en la cola`;
+  $('list').innerHTML = state.queue.slice(0, state.shown).map((q) => {
+    const [label, cls] = LABELS[q.s];
+    return `<li><span class="name">@${esc(q.u)}</span><span class="tag ${cls}">${label}</span></li>`;
+  }).join('');
+  show($('moreBtn'), total > state.shown);
+  $('moreBtn').textContent = `Mostrar ${Math.min(LIST_PAGE, total - state.shown)} más`;
 }
-$('moreBtn').addEventListener('click', () => { state.shown += PAGE; render(); });
+$('moreBtn').addEventListener('click', () => { state.shown += LIST_PAGE; render(); });
+function setStatus(msg) { $('status').textContent = msg; }
 
-$('list').addEventListener('click', (e) => {
-  const li = e.target.closest('li.person'); if (!li) return;
-  const pk = li.dataset.pk;
-  state.selected.has(pk) ? state.selected.delete(pk) : state.selected.add(pk);
-  li.classList.toggle('sel', state.selected.has(pk));
-  li.querySelector('input').checked = state.selected.has(pk);
-  updateBar();
-});
-$('selAll').addEventListener('click', () => { state.filtered.forEach((f) => !f.closeFriend && state.selected.add(f.pk)); render(); });
-$('selNone').addEventListener('click', () => { state.selected.clear(); render(); });
-
-function updateBar() {
-  const n = state.selected.size;
-  $('selCount').textContent = n === 1 ? '1 seleccionado' : `${n} seleccionados`;
-  if (state.busy === 'besties') return;
-  $('addBtn').disabled = n === 0;
-  $('addBtn').textContent = n ? `Agregar ${n} a Mejores amigos` : 'Agregar a Mejores amigos';
-  $('barHint').textContent = n > 150
-    ? 'Son muchos para una sola vez. Para cuidar tu cuenta, agrega 100–150 por día.'
-    : 'Se agregan en lotes pequeños, con pausas entre cada uno. Mantén esta pestaña abierta.';
-}
-
-/* ---------- Agregar (lotes de 25 con pausas) ---------- */
-$('addBtn').addEventListener('click', async () => {
-  if (state.busy === 'besties') { state.cancel = true; return; }
-  if (state.busy) return;
-  const ids = [...state.selected].filter((id) => !state.besties.has(id));
-  if (!ids.length) { flash($('jobError'), 'No hay usuarios nuevos para agregar.'); return; }
-  if (ids.length > MAX_ADD) { flash($('jobError'), `Máximo ${MAX_ADD} por tanda. Divide la selección en varias tandas.`); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
-  if (!confirm(`Vas a agregar ${ids.length} personas a Mejores amigos. Mantén esta pestaña abierta hasta que termine. ¿Continuar?`)) return;
-
-  flash($('jobError'), '');
-  state.busy = 'besties'; state.cancel = false;
-  $('addBtn').textContent = 'Detener';
-  show($('addProgressWrap'), true);
-  let done = 0, failed = 0, stopMsg = '';
-  const progress = () => {
-    $('addProgress').style.width = (100 * (done + failed) / ids.length) + '%';
-    $('barHint').textContent = `Agregando… ${done + failed} de ${ids.length}`;
-  };
-  progress();
-  for (let i = 0; i < ids.length; i += ADD_CHUNK) {
-    if (state.cancel) { stopMsg = ' Detenido.'; break; }
-    const chunk = ids.slice(i, i + ADD_CHUNK);
-    try {
-      await api('besties/add', { ids: chunk });
-      chunk.forEach((id) => { state.besties.add(id); state.selected.delete(id); });
-      done += chunk.length;
-    } catch (err) {
-      failed += chunk.length;
-      if (err.code) { if (err.code === 'blocked') flash($('jobError'), err.message); stopMsg = ' Detenido.'; break; }
+/* ---------- Motor con límites ---------- */
+class Cancelled extends Error {}
+// Espera cancelable, mostrando una cuenta regresiva.
+async function wait(ms, label) {
+  const end = Date.now() + ms;
+  while (Date.now() < end) {
+    if (state.cancel) throw new Cancelled();
+    if (label) {
+      const s = Math.ceil((end - Date.now()) / 1000);
+      setStatus(`${label} ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`);
     }
-    progress();
-    if (i + ADD_CHUNK < ids.length) await sleep(rand(4000, 8000));
+    await sleepRaw(Math.min(1000, end - Date.now()));
   }
-  state.busy = null;
-  show($('addProgressWrap'), false);
-  saveCache();
-  showResults();
-  $('barHint').textContent = `Listo: ${done} agregados${failed ? `, ${failed} fallaron` : ''}.${stopMsg}`;
+  if (state.cancel) throw new Cancelled();
+}
+
+async function loadBesties() {
+  const ids = new Set();
+  let cursor = null;
+  for (;;) {
+    const r = await api('besties/page', { cursor });
+    r.ids.forEach((id) => ids.add(id));
+    if (!r.more) return ids;
+    cursor = r.cursor;
+    await wait(rand(PACE.besties), `Leyendo tu lista actual (${ids.size})…`);
+  }
+}
+
+async function keepAwake(on) {
+  try {
+    if (on && 'wakeLock' in navigator) state.wakeLock = await navigator.wakeLock.request('screen');
+    else if (!on && state.wakeLock) { await state.wakeLock.release(); state.wakeLock = null; }
+  } catch (_) {}
+}
+
+$('runBtn').addEventListener('click', () => {
+  if (state.running) { state.cancel = true; setStatus('Pausando…'); return; }
+  run();
 });
+
+async function run() {
+  flash($('jobError'), '');
+  state.running = true; state.cancel = false;
+  render();
+  keepAwake(true);
+  let stopMsg = 'Pausado. Puedes seguir cuando quieras.';
+  let addedThisRun = 0, sinceRest = 0, consecutiveErrors = 0;
+  const fail = (err) => {
+    if (err instanceof Cancelled) throw err;
+    if (['blocked', 'relogin', 'app_password', 'network'].includes(err.code)) throw err;
+    consecutiveErrors++;
+    if (consecutiveErrors >= PACE.maxConsecutiveErrors) {
+      throw new ApiError(`Se detuvo tras ${consecutiveErrors} errores seguidos. Último: ${err.message}`);
+    }
+  };
+  try {
+    setStatus('Leyendo tu lista actual de Mejores amigos…');
+    const besties = await loadBesties();
+
+    for (;;) {
+      const remaining = dailyLimit() - daily();
+      if (remaining <= 0) { stopMsg = 'Llegaste al límite de hoy. Vuelve mañana para seguir desde donde quedó.'; break; }
+      const pending = state.queue.filter((q) => q.s === 'pending');
+      if (!pending.length) { stopMsg = `Terminado: ${addedThisRun} agregados en esta tanda.`; break; }
+
+      // Buscar usuarios hasta juntar un lote (los que ya estaban no cuentan).
+      const size = Math.min(randInt(PACE.batchMin, PACE.batchMax), remaining);
+      const batch = [];
+      for (const item of pending) {
+        if (batch.length >= size) break;
+        if (!item.pk) {
+          setStatus(`Buscando @${item.u}…`);
+          try {
+            const r = await api('resolve', { username: item.u });
+            item.pk = r.pk;
+            consecutiveErrors = 0;
+          } catch (err) {
+            if (err.code === 'not_found') { item.s = 'notfound'; saveQueue(); render(); await wait(rand(PACE.lookupMs)); continue; }
+            item.s = 'error'; saveQueue(); render();
+            fail(err);
+            await wait(rand(PACE.lookupMs));
+            continue;
+          }
+          await wait(rand(PACE.lookupMs), `Encontrado @${item.u}. Siguiente búsqueda en`);
+        }
+        if (besties.has(item.pk)) { item.s = 'already'; saveQueue(); render(); continue; }
+        batch.push(item);
+      }
+      if (!batch.length) continue;
+
+      setStatus(`Agregando ${batch.length} a Mejores amigos…`);
+      try {
+        await api('besties/add', { ids: batch.map((b) => b.pk) });
+        batch.forEach((b) => { b.s = 'added'; besties.add(b.pk); });
+        bumpDaily(batch.length);
+        addedThisRun += batch.length; sinceRest += batch.length;
+        consecutiveErrors = 0;
+      } catch (err) {
+        batch.forEach((b) => (b.s = 'error'));
+        saveQueue(); render();
+        fail(err);
+      }
+      saveQueue(); render();
+
+      const more = state.queue.some((q) => q.s === 'pending') && daily() < dailyLimit();
+      if (!more) continue;
+      if (sinceRest >= PACE.restEvery) {
+        sinceRest = 0;
+        await wait(rand(PACE.restMs), 'Descanso largo para cuidar la cuenta. Sigue en');
+      } else {
+        await wait(rand(PACE.betweenBatchesMs), `Lote listo (${addedThisRun} en esta tanda). Próximo lote en`);
+      }
+    }
+  } catch (err) {
+    if (!(err instanceof Cancelled)) {
+      stopMsg = 'Detenido.';
+      if (err.code !== 'relogin' && err.code !== 'app_password') flash($('jobError'), err.message);
+    }
+  } finally {
+    state.running = false; state.cancel = false;
+    keepAwake(false);
+    saveQueue();
+    render();
+    setStatus(stopMsg);
+  }
+}
+
+window.addEventListener('beforeunload', (e) => { if (state.running) { e.preventDefault(); e.returnValue = ''; } });
 
 boot();
 </script>

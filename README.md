@@ -1,7 +1,7 @@
 # Mejores amigos, con criterio
 
-Panel para: iniciar sesión en TU cuenta de Instagram, descargar tus seguidores,
-filtrarlos y agregarlos a Mejores amigos (Close Friends) por tandas.
+Panel para: iniciar sesión en TU cuenta de Instagram, pegar una lista de usuarios
+y agregarlos a Mejores amigos (Close Friends) de a poco, con límites para cuidar la cuenta.
 
 Funciona en tu computadora o desplegado en Vercel.
 
@@ -26,13 +26,18 @@ Abre http://localhost:3000. En local `APP_PASSWORD` y `SESSION_SECRET` son opcio
 - `lib/app.js`: API Express **sin estado** que usa `instagram-private-api`. El servidor no guarda nada.
 - La sesión de Instagram vuelve al navegador cifrada con AES-256-GCM (clave: `SESSION_SECRET`)
   y el navegador la manda en cada pedido. Tu contraseña de Instagram solo se usa para iniciar sesión.
-- Las tareas largas las conduce el navegador en pasos cortos: una página de seguidores por pedido,
-  y lotes de 25 para agregar a Mejores amigos, con pausas al azar. **Deja la pestaña abierta** mientras corren.
+- El navegador conduce la cola en pasos cortos, con estos límites (constante `PACE` en `public/index.html`):
+  - límite por día elegible (80 por defecto, máximo 250); al llegar se detiene y sigue otro día;
+  - lotes de 5 a 10 personas, con 45 s a 2 min de pausa al azar entre lotes;
+  - un descanso de 10 a 20 min cada 40 agregados;
+  - búsqueda de cada usuario con 3 a 8 s de pausa;
+  - salta a quienes ya están en tu lista, y se detiene al primer aviso de bloqueo o límite.
+  **Deja la pestaña abierta** mientras corre.
+- La cola y el contador del día se guardan en el navegador (localStorage).
 - Si Instagram rechaza el inicio de sesión con usuario y contraseña, se puede entrar pegando la
   cookie `sessionid` de instagram.com (el panel explica cómo). No la compartas: es la llave de tu sesión.
 - La versión de app que se presenta a Instagram está en `APP_PROFILE` (`lib/app.js`). Si vuelve a salir
   "Your version of Instagram is out of date", hay que actualizarla.
-- La lista descargada se guarda en el navegador (localStorage) para no descargarla cada vez.
 - `api/index.js`: entrada de Vercel. `server.js`: servidor local.
 
 ## Advertencias
@@ -41,5 +46,4 @@ Abre http://localhost:3000. En local `APP_PASSWORD` y `SESSION_SECRET` son opcio
 - Desde Vercel, Instagram ve IPs de centros de datos: es más probable que pida verificación
   ("Fui yo" en la app) o bloquee acciones que desde tu casa.
 - Usa solo cuentas que te pertenezcan.
-- Ve por tandas de 100–150 por día.
 - Si algún método deja de funcionar, Instagram cambió su API: actualiza con `npm update instagram-private-api`.
